@@ -1,20 +1,56 @@
 import React from "react";
 import axios from "axios";
-import "./Covid19.css";
-import TimeAgo from "react-timeago";
+//import "./Covid19.css";
+import TimeAgoRenderer from "./TimeAgoRenderer";
 import Login from "./Login";
-// import { AgGridReact } from "ag-grid-react"
-// import "ag-grid-community/dist/styles/ag-grid.css"
-// import "ag-grid-community/dist/styles/ag-theme-balham.css"
+import { AgGridReact } from "ag-grid-react";
+import "ag-grid-community/dist/styles/ag-grid.css";
+import "ag-grid-community/dist/styles/ag-theme-alpine.css";
 export default class Covid19 extends React.Component {
   constructor(props) {
     super(props);
     this.onClickHome = this.onClickHome.bind(this);
     this.state = {
-      statistics: [],
       home: false,
+      columnDefs: [
+        {
+          headerName: "Country",
+          field: "countryRegion",
+          sortable: true,
+          filter: true,
+          checkboxSelection: true,
+        },
+        {
+          headerName: "Confirmed",
+          field: "confirmed",
+          sortable: true,
+          filter: true,
+        },
+        {
+          headerName: "Recovered",
+          field: "recovered",
+          sortable: true,
+          filter: true,
+        },
+        { headerName: "Deaths", field: "deaths", sortable: true, filter: true },
+        {
+          headerName: "Last Uptade",
+          field: "lastUpdate",
+          sortable: true,
+          filter: true,
+          cellRenderer: "timeAgo",
+        },
+      ],
+      rowData: [],
+      frameworkComponents: {
+        timeAgo: TimeAgoRenderer,
+      },
+      /*   rowClassRules: {
+        rowStyle: "data.confirmed",
+      },*/
     };
   }
+
   componentDidMount() {
     axios
       .get("https://covid19.mathdro.id/api/confirmed")
@@ -74,7 +110,7 @@ export default class Covid19 extends React.Component {
         //   arrMain[n].lastUpdate = String(arrMain[n].lastUpdate)
         // }
         //ReactTimeAgo date={date}
-        this.setState({ statistics: arrMain });
+        this.setState({ rowData: arrMain });
       })
       .catch((error) => {
         console.log(error);
@@ -83,6 +119,7 @@ export default class Covid19 extends React.Component {
   onClickHome() {
     this.setState({ home: true });
   }
+
   render() {
     if (this.state.home) {
       return <Login />;
@@ -92,26 +129,18 @@ export default class Covid19 extends React.Component {
           <button to="Home" onClick={this.onClickHome}>
             Back
           </button>
-          <table className="tablstl">
-            <tr>
-              <th className="title">Country</th>
-              <th className="title">Confirmed</th>
-              <th className="title">Recovered</th>
-              <th className="title">Deaths</th>
-              <th className="title">Last Update</th>
-            </tr>
-            {this.state.statistics.map((stat, index) => (
-              <tr key={index.toString()}>
-                <td className="tdstyle">{stat.countryRegion}</td>
-                <td className="tdstyle">{stat.confirmed}</td>
-                <td className="tdstyle">{stat.recovered}</td>
-                <td className="tdstyle">{stat.deaths}</td>
-                <td className="tdstyle">
-                  {<TimeAgo date={stat.lastUpdate}></TimeAgo>}
-                </td>
-              </tr>
-            ))}
-          </table>
+          <div
+            className="ag-theme-alpine"
+            style={{ height: "500px", width: "75%" }}
+          >
+            <AgGridReact
+              columnDefs={this.state.columnDefs}
+              rowData={this.state.rowData}
+              rowSelection="multiple"
+              frameworkComponents={this.state.frameworkComponents}
+              // rowClassRules={this.state.rowClassRules}
+            ></AgGridReact>
+          </div>
         </>
       );
     }
